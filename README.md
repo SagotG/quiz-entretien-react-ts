@@ -10,9 +10,9 @@ Aucune dépendance ni build. Ouvrir `index.html` dans un navigateur :
 xdg-open index.html
 ```
 
-## Hébergement privé (Cloudflare Pages + Access)
+## Publier sur GitHub Pages
 
-Le dépôt GitHub est privé. Le site est déployé par **Cloudflare Pages** (connecté au dépôt, redéploiement à chaque push sur `main`, aucune commande de build, dossier de sortie à la racine) et protégé par **Cloudflare Access** : seule l'adresse e-mail autorisée peut l'ouvrir, après un code reçu par e-mail.
+Le site est 100 % statique (chemins relatifs) : il est publié par GitHub Pages depuis la branche `main` (racine), à chaque push. Le fichier `.nojekyll` désactive le traitement Jekyll.
 
 La progression (réglages, questions ratées) est stockée dans le `localStorage` du navigateur : elle est propre à chaque appareil.
 
@@ -25,7 +25,16 @@ La progression (réglages, questions ratées) est stockée dans le `localStorage
 - **Réviser mes erreurs** : les questions ratées sont mémorisées (localStorage) et retirées dès qu'elles sont réussies.
 - **Thème** clair / sombre / auto (bouton en haut à droite, mémorisé).
 - **Coloration syntaxique** des extraits de code (JS, TS, JSX) avec la palette VS Code Dark+, via un petit tokenizer maison (`highlight.js`, sans dépendance).
-- **Raccourcis** : `A`–`F` ou `1`–`6` pour cocher, `Entrée` pour valider puis passer à la suite.
+- **Raccourcis** : `A`–`F` ou `1`–`6` pour cocher, `Entrée` pour valider puis passer à la suite. Désactivables dans les réglages.
+- **Responsive** : bouton Valider / Suivant collé en bas de l'écran sur mobile, zones tactiles agrandies.
+
+## Accessibilité et sécurité
+
+- Visé : **WCAG 2.2 AA**. Contrastes vérifiés (texte ≥ 4.5:1, contrôles ≥ 3:1) dans les deux thèmes, focus visible, `prefers-reduced-motion` et mode contraste élevé pris en charge.
+- Focus déplacé sur la question à chaque nouvelle question, puis sur « Question suivante » après validation ; résultat et explication annoncés via une région `role="status"`.
+- Bonne / mauvaise réponse indiquées aussi par du texte et des symboles, pas seulement par la couleur.
+- Raccourcis à une touche désactivables (critère 2.1.4) ; chrono réglable ou désactivable avant de commencer (critère 2.2.1).
+- **CSP** stricte (`default-src 'none'`, scripts et styles uniquement depuis le site, pas de style inline), aucune ressource externe, contenu échappé avant insertion, réglages relus depuis le `localStorage` validés.
 
 ## Pas de pattern d'écriture dans les réponses
 

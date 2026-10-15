@@ -3,22 +3,31 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="Entraînement aux questions théoriques d'entretien React, TypeScript et JavaScript : QCM chronométrés.">
   <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#12151b" media="(prefers-color-scheme: dark)">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>Quiz Entretien React TS</title>
+  <title>Quiz entretien React · TypeScript · JavaScript</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%233b5bdb'/%3E%3Ctext x='16' y='23' font-family='sans-serif' font-size='20' font-weight='700' text-anchor='middle' fill='%23fff'%3E%3F%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Changer de thème"></button>
-  <main id="app" class="app" aria-live="polite"></main>
 
   <!-- Banque de questions : un fichier par catégorie (scripts classiques pour fonctionner en file://) -->
-  <script src="questions/typescript.js"></script>
-  <script src="questions/javascript.js"></script>
-  <script src="questions/react.js"></script>
-  <script src="highlight.js"></script>
-  <script src="app.js"></script>
+  <script src="questions/typescript.js" defer></script>
+  <script src="questions/javascript.js" defer></script>
+  <script src="questions/react.js" defer></script>
+  <script src="highlight.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <button type="button" id="theme-toggle" class="theme-toggle"></button>
+  <main id="app" class="app">
+    <noscript><p>Ce quiz nécessite JavaScript.</p></noscript>
+  </main>
+  <!-- Annonces pour les lecteurs d'écran (résultat d'une réponse, temps écoulé…) -->
+  <div id="sr-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
 </body>
 </html>

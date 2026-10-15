@@ -34,19 +34,33 @@
     },
   };
 
+  const COUNT_OPTIONS = [5, 10, 20, "all"];
+  const TIME_FACTORS = [1, 1.5, 0];
+  const THEME_NAMES = ["auto", "light", "dark"];
+
+  /** Ne garde du stockage que des valeurs connues : le localStorage n'est pas une source fiable. */
+  function sanitizeSettings(raw) {
+    const s = raw && typeof raw === "object" ? raw : {};
+    const pick = (value, allowed, fallback) => (allowed.includes(value) ? value : fallback);
+    const bool = (value, fallback) => (typeof value === "boolean" ? value : fallback);
+    return {
+      categories: Array.isArray(s.categories)
+        ? CATEGORY_ORDER.filter((c) => s.categories.includes(c))
+        : [...CATEGORY_ORDER],
+      count: pick(s.count, COUNT_OPTIONS, 10),
+      grouped: bool(s.grouped, true),
+      strict: bool(s.strict, false),
+      shortcuts: bool(s.shortcuts, true),
+      timeFactor: pick(s.timeFactor, TIME_FACTORS, 1),
+      theme: pick(s.theme, THEME_NAMES, "auto"),
+    };
+  }
+
   const persisted = storage.load();
-  const settings = Object.assign(
-    {
-      categories: [...CATEGORY_ORDER],
-      count: 10,
-      grouped: true,
-      strict: false,
-      timeFactor: 1,
-      theme: "auto",
-    },
-    persisted.settings,
+  const settings = sanitizeSettings(persisted.settings);
+  const mistakes = new Set(
+    (Array.isArray(persisted.mistakes) ? persisted.mistakes : []).filter((id) => BY_ID.has(id)),
   );
-  const mistakes = new Set((persisted.mistakes || []).filter((id) => BY_ID.has(id)));
 
   function persist() {
     storage.save({ settings, mistakes: [...mistakes] });
@@ -69,7 +83,8 @@
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   /** Texte avec `code inline` → HTML échappé. */
@@ -142,9 +157,20 @@
   // État de l'application
   // ---------------------------------------------------------------------------
   const app = document.getElementById("app");
+  const srStatus = document.getElementById("sr-status");
   let screen = "home";
   let session = null;
   let timerId = null;
+  let lastViewKey = null; // détecte un changement d'écran / de question entre deux rendus
+
+  /** Message lu par les lecteurs d'écran via la région `role="status"` persistante. */
+  function announce(message) {
+    srStatus.textContent = "";
+    // Laisse le temps au DOM de vider la région pour qu'un message identique soit relu.
+    setTimeout(() => {
+      srStatus.textContent = message;
+    }, 50);
+  }
 
   function availableQuestions(mode) {
     const cats = new Set(settings.categories);
@@ -209,7 +235,15 @@
       bar.parentElement.classList.toggle("is-urgent", remaining <= WARNING_THRESHOLD);
     }
     if (label) label.textContent = formatSeconds(remaining);
-    if (remaining <= 0) validate(true);
+    if (remaining <= 0) {
+      validate(true);
+      return;
+    }
+    // Alerte unique à l'approche de la fin (le libellé du chrono n'est pas une région live).
+    if (remaining <= WARNING_THRESHOLD && !cur.warned) {
+      cur.warned = true;
+      announce(`Plus que ${WARNING_THRESHOLD} secondes`);
+    }
   }
 
   function toggleOption(originalIndex) {
@@ -246,6 +280,15 @@
     else mistakes.add(cur.question.id);
     persist();
     render();
+    announce(`${feedbackTitle(session.results[session.results.length - 1])}. ${plainText(cur.question.explanation)}`);
+  }
+
+  function feedbackTitle(result) {
+    return result.correct ? "Bonne réponse" : result.timedOut ? "Temps écoulé" : "Mauvaise réponse";
+  }
+
+  function plainText(text) {
+    return String(text).replace(/`/g, "");
   }
 
   function next() {
@@ -280,73 +323,101 @@
   // ---------------------------------------------------------------------------
   // Rendus
   // ---------------------------------------------------------------------------
+  const SCREEN_TITLES = {
+    home: () => "Accueil",
+    quiz: () => `Question ${session.index + 1} sur ${session.questions.length}`,
+    results: () => "Résultat",
+  };
+
   function render() {
+    // Mémorise l'élément focalisé pour le restaurer après un rendu sur le même écran
+    // (ex. : cocher une catégorie ne doit ni faire défiler la page ni déplacer le focus).
+    const active = document.activeElement;
+    const previousFocus =
+      active && app.contains(active) && active.dataset.action
+        ? { action: active.dataset.action, value: active.dataset.value }
+        : null;
+
     if (screen === "home") app.innerHTML = renderHome();
     else if (screen === "quiz") app.innerHTML = renderQuiz();
     else app.innerHTML = renderResults();
+
+    // Largeurs appliquées via le CSSOM : compatible avec une CSP sans 'unsafe-inline'.
+    app.querySelectorAll("[data-width]").forEach((el) => {
+      el.style.width = `${el.dataset.width}%`;
+    });
     if (screen === "quiz") {
       renderOptionsState();
       applyValidatedClasses();
     }
-    window.scrollTo(0, 0);
-    const focusTarget = app.querySelector("[data-autofocus]");
-    if (focusTarget) focusTarget.focus({ preventScroll: true });
+    document.title = `${SCREEN_TITLES[screen]()} · Quiz entretien React · TS · JS`;
+
+    const viewKey = screen === "quiz" ? `quiz:${session.index}:${session.current.validated}` : screen;
+    const isFirstRender = lastViewKey === null;
+    const viewChanged = viewKey !== lastViewKey;
+    lastViewKey = viewKey;
+
+    if (isFirstRender) return; // au chargement, on laisse le navigateur gérer le focus
+    if (viewChanged) {
+      if (!viewKey.endsWith(":true")) window.scrollTo(0, 0);
+      const focusTarget = app.querySelector("[data-autofocus]");
+      if (focusTarget) focusTarget.focus({ preventScroll: !viewKey.endsWith(":true") });
+    } else if (previousFocus) {
+      const selector = `[data-action="${previousFocus.action}"]${
+        previousFocus.value !== undefined ? `[data-value="${previousFocus.value}"]` : ""
+      }`;
+      const same = app.querySelector(selector);
+      if (same) same.focus({ preventScroll: true });
+    }
   }
 
   function renderHome() {
     const counts = Object.fromEntries(CATEGORY_ORDER.map((c) => [c, BANK.filter((q) => q.category === c).length]));
     const selectedCount = availableQuestions("all").length;
     const mistakesCount = availableQuestions("mistakes").length;
-    const countOptions = [5, 10, 20, "all"];
-    const timeOptions = [
-      [1, "Normal"],
-      [1.5, "Confortable ×1.5"],
-      [0, "Désactivé"],
-    ];
+    const timeLabels = { 1: "Normal", 1.5: "Confortable ×1.5", 0: "Désactivé" };
 
     return `
       <header class="hero">
         <p class="eyebrow">Entraînement entretien technique</p>
-        <h1>React · TypeScript · JavaScript</h1>
+        <h1 tabindex="-1" data-autofocus>React · TypeScript · JavaScript</h1>
         <p class="lede">Questions théoriques chronométrées, à choix unique ou multiple. Les options sont mélangées à chaque passage.</p>
       </header>
 
-      <section class="panel">
-        <h2>Catégories</h2>
+      <section class="panel" aria-labelledby="cat-title">
+        <h2 id="cat-title">Catégories</h2>
         <div class="cat-grid">
-          ${CATEGORY_ORDER.map(
-            (c) => `
-            <button type="button" class="cat-card cat-${c} ${settings.categories.includes(c) ? "is-on" : ""}"
-                    data-action="toggle-category" data-value="${c}" aria-pressed="${settings.categories.includes(c)}">
-              <span class="cat-badge">${CATEGORIES[c].short}</span>
+          ${CATEGORY_ORDER.map((c) => {
+            const on = settings.categories.includes(c);
+            return `
+            <button type="button" class="cat-card cat-${c} ${on ? "is-on" : ""}"
+                    data-action="toggle-category" data-value="${c}" aria-pressed="${on}">
+              <span class="cat-badge" aria-hidden="true">${CATEGORIES[c].short}</span>
               <span class="cat-name">${CATEGORIES[c].label}</span>
               <span class="cat-count">${counts[c]} questions</span>
-            </button>`,
-          ).join("")}
+              <span class="cat-check" aria-hidden="true"></span>
+            </button>`;
+          }).join("")}
         </div>
       </section>
 
-      <section class="panel settings">
-        <div class="setting">
-          <span class="setting-label">Nombre de questions</span>
+      <section class="panel settings" aria-label="Réglages">
+        <div class="setting" role="group" aria-labelledby="count-label">
+          <span class="setting-label" id="count-label">Nombre de questions</span>
           <div class="segmented">
-            ${countOptions
-              .map(
-                (n) => `<button type="button" data-action="set-count" data-value="${n}"
-                  class="${settings.count === n ? "is-on" : ""}">${n === "all" ? "Toutes" : n}</button>`,
-              )
-              .join("")}
+            ${COUNT_OPTIONS.map(
+              (n) => `<button type="button" data-action="set-count" data-value="${n}"
+                  aria-pressed="${settings.count === n}" class="${settings.count === n ? "is-on" : ""}">${n === "all" ? "Toutes" : n}</button>`,
+            ).join("")}
           </div>
         </div>
-        <div class="setting">
-          <span class="setting-label">Chrono</span>
+        <div class="setting" role="group" aria-labelledby="time-label">
+          <span class="setting-label" id="time-label">Chrono</span>
           <div class="segmented">
-            ${timeOptions
-              .map(
-                ([v, label]) => `<button type="button" data-action="set-time" data-value="${v}"
-                  class="${settings.timeFactor === v ? "is-on" : ""}">${label}</button>`,
-              )
-              .join("")}
+            ${TIME_FACTORS.map(
+              (v) => `<button type="button" data-action="set-time" data-value="${v}"
+                  aria-pressed="${settings.timeFactor === v}" class="${settings.timeFactor === v ? "is-on" : ""}">${timeLabels[v]}</button>`,
+            ).join("")}
           </div>
         </div>
         <label class="switch">
@@ -357,10 +428,14 @@
           <input type="checkbox" data-action="toggle-strict" ${settings.strict ? "checked" : ""}>
           <span><strong>Mode strict</strong> : ne pas indiquer si la question attend une ou plusieurs réponses</span>
         </label>
+        <label class="switch">
+          <input type="checkbox" data-action="toggle-shortcuts" ${settings.shortcuts ? "checked" : ""}>
+          <span><strong>Raccourcis clavier</strong> : lettres ou chiffres pour cocher, <kbd>Entrée</kbd> pour valider</span>
+        </label>
       </section>
 
       <div class="actions">
-        <button type="button" class="btn btn-primary" data-action="start" data-autofocus ${selectedCount ? "" : "disabled"}>
+        <button type="button" class="btn btn-primary" data-action="start" ${selectedCount ? "" : "disabled"}>
           Commencer <span class="muted">(${settings.count === "all" ? selectedCount : Math.min(settings.count, selectedCount)} questions)</span>
         </button>
         <button type="button" class="btn" data-action="start-mistakes" ${mistakesCount ? "" : "disabled"}>
@@ -393,40 +468,43 @@
         ? "Plusieurs réponses possibles"
         : "Une seule réponse";
 
+    const kbd = (key) => (settings.shortcuts ? ` <kbd aria-hidden="true">${key}</kbd>` : "");
+
     return `
       <div class="quiz-top">
         <button type="button" class="link" data-action="quit">← Terminer</button>
-        <span class="progress-label">Question ${session.index + 1} / ${total}</span>
+        <h1 class="progress-label">Question ${session.index + 1} / ${total}</h1>
         <span class="score-label">Score ${score} / ${session.results.length}</span>
       </div>
-      <div class="progress"><div class="progress-fill" style="width:${(session.index / total) * 100}%"></div></div>
+      <div class="progress" aria-hidden="true"><div class="progress-fill" data-width="${(session.index / total) * 100}"></div></div>
 
-      <article class="question-card">
+      <article class="question-card" aria-labelledby="q-text">
         <div class="question-meta">
           <span class="cat-badge cat-${q.category}">${CATEGORIES[q.category].label}</span>
           ${
             cur.limit
-              ? `<div class="timer ${cur.validated ? "is-stopped" : ""}" role="timer">
-                   <div class="timer-track"><div id="timer-bar" class="timer-bar"></div></div>
+              ? `<div class="timer ${cur.validated ? "is-stopped" : ""}" role="timer" aria-label="Temps restant">
+                   <div class="timer-track" aria-hidden="true"><div id="timer-bar" class="timer-bar"></div></div>
                    <span id="timer-label" class="timer-label">${formatSeconds(cur.limit)}</span>
                  </div>`
               : `<span class="muted">Sans chrono</span>`
           }
         </div>
 
-        <h2 class="question-text">${rich(q.question)}</h2>
-        ${q.code ? `<pre class="code"><code>${window.highlightCode(q.code)}</code></pre>` : ""}
-        <p class="hint">${hint}</p>
+        <h2 class="question-text" id="q-text" tabindex="-1" ${cur.validated ? "" : "data-autofocus"}>${rich(q.question)}</h2>
+        ${q.code ? `<pre class="code" tabindex="0" aria-label="Extrait de code"><code>${window.highlightCode(q.code)}</code></pre>` : ""}
+        <p class="hint" id="q-hint">${hint}</p>
 
-        <div class="options" role="${isMultiple || settings.strict ? "group" : "radiogroup"}">
+        <div class="options" role="group" aria-labelledby="q-text" aria-describedby="q-hint">
           ${cur.order
             .map(
               (orig, pos) => `
             <button type="button" class="option" data-action="toggle-option" data-value="${orig}"
-                    ${cur.validated ? "disabled" : ""}>
-              <span class="option-key">${OPTION_LETTERS[pos]}</span>
+                    ${cur.validated ? 'aria-disabled="true"' : ""}>
+              <span class="option-key" aria-hidden="true">${OPTION_LETTERS[pos]}</span>
               <span class="option-text">${rich(q.options[orig])}</span>
               <span class="option-mark" aria-hidden="true"></span>
+              <span class="sr-only option-status"></span>
             </button>`,
             )
             .join("")}
@@ -438,23 +516,26 @@
           ${
             cur.validated
               ? `<button type="button" class="btn btn-primary" data-action="next" data-autofocus>
-                   ${session.index + 1 < total ? "Question suivante" : "Voir le résultat"} <kbd>Entrée</kbd>
+                   ${session.index + 1 < total ? "Question suivante" : "Voir le résultat"}${kbd("Entrée")}
                  </button>`
               : `<button type="button" class="btn btn-primary" data-action="validate" id="validate-btn" disabled>
-                   Valider <kbd>Entrée</kbd>
+                   Valider${kbd("Entrée")}
                  </button>`
           }
-          <span class="kbd-help">Raccourcis : <kbd>A</kbd>–<kbd>${OPTION_LETTERS[cur.order.length - 1]}</kbd> ou <kbd>1</kbd>–<kbd>${cur.order.length}</kbd></span>
+          ${
+            settings.shortcuts
+              ? `<span class="kbd-help">Raccourcis : <kbd>A</kbd>–<kbd>${OPTION_LETTERS[cur.order.length - 1]}</kbd> ou <kbd>1</kbd>–<kbd>${cur.order.length}</kbd></span>`
+              : ""
+          }
         </div>
       </article>`;
   }
 
   function renderFeedback() {
     const result = session.results[session.results.length - 1];
-    const title = result.correct ? "Bonne réponse" : result.timedOut ? "Temps écoulé" : "Mauvaise réponse";
     return `
       <div class="feedback ${result.correct ? "is-correct" : "is-wrong"}">
-        <strong>${title}</strong>
+        <strong>${feedbackTitle(result)}</strong>
         <p>${rich(result.question.explanation)}</p>
       </div>`;
   }
@@ -484,6 +565,14 @@
       el.classList.toggle("is-missed", good && !picked);
       el.classList.toggle("is-wrong", !good && picked);
       el.classList.toggle("is-dim", !good && !picked);
+      // Équivalent textuel des couleurs et des symboles ✓ / ✗ pour les lecteurs d'écran.
+      el.querySelector(".option-status").textContent = good
+        ? picked
+          ? " : bonne réponse, cochée"
+          : " : bonne réponse, non cochée"
+        : picked
+          ? " : mauvaise réponse, cochée"
+          : "";
     });
   }
 
@@ -501,7 +590,7 @@
     return `
       <header class="hero">
         <p class="eyebrow">Résultat${results.length < session.questions.length ? " (session interrompue)" : ""}</p>
-        <h1>${good} / ${results.length} <span class="muted">· ${pct}%</span></h1>
+        <h1 tabindex="-1" data-autofocus>${good} / ${results.length} <span class="muted">· ${pct}%</span></h1>
         <p class="lede">${verdict} — ${formatSeconds(totalTime)} au total, ${formatSeconds(results.length ? totalTime / results.length : 0)} par question en moyenne.</p>
       </header>
 
@@ -513,7 +602,7 @@
               ({ c, total, good: g }) => `
             <div class="cat-result">
               <span class="cat-badge cat-${c}">${CATEGORIES[c].label}</span>
-              <div class="meter"><div class="meter-fill cat-${c}" style="width:${(g / total) * 100}%"></div></div>
+              <div class="meter" aria-hidden="true"><div class="meter-fill cat-${c}" data-width="${(g / total) * 100}"></div></div>
               <span class="tabular">${g} / ${total}</span>
             </div>`,
             )
@@ -529,7 +618,7 @@
       </section>
 
       <div class="actions">
-        <button type="button" class="btn btn-primary" data-action="restart" data-autofocus>Nouvelle session</button>
+        <button type="button" class="btn btn-primary" data-action="restart">Nouvelle session</button>
         <button type="button" class="btn" data-action="start-mistakes" ${availableQuestions("mistakes").length ? "" : "disabled"}>
           Réviser mes erreurs (${availableQuestions("mistakes").length})
         </button>
@@ -548,11 +637,11 @@
         <details ${r.correct ? "" : "open"}>
           <summary>
             <span class="status-dot" aria-hidden="true"></span>
-            <span class="cat-badge cat-${q.category}">${CATEGORIES[q.category].short}</span>
+            <span class="cat-badge cat-${q.category}" title="${CATEGORIES[q.category].label}">${CATEGORIES[q.category].short}</span>
             <span class="review-q">${rich(q.question)}</span>
             <span class="review-status">${statusLabel}</span>
           </summary>
-          ${q.code ? `<pre class="code"><code>${window.highlightCode(q.code)}</code></pre>` : ""}
+          ${q.code ? `<pre class="code" tabindex="0" aria-label="Extrait de code"><code>${window.highlightCode(q.code)}</code></pre>` : ""}
           <div class="review-cols">
             <div><h3>Votre réponse</h3><ul>${yours}</ul></div>
             <div><h3>Réponse attendue</h3><ul>${expected}</ul></div>
@@ -625,16 +714,20 @@
     const action = event.target.dataset.action;
     if (action === "toggle-grouped") settings.grouped = event.target.checked;
     else if (action === "toggle-strict") settings.strict = event.target.checked;
+    else if (action === "toggle-shortcuts") settings.shortcuts = event.target.checked;
     else return;
     persist();
   });
 
+  // Raccourcis à une touche : désactivables (WCAG 2.1.4) et ignorés quand le focus est
+  // sur un autre élément interactif, qui garde son comportement natif. Sur une option,
+  // Espace coche nativement et Entrée valide.
   document.addEventListener("keydown", (event) => {
-    if (screen !== "quiz" || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (screen !== "quiz" || !settings.shortcuts) return;
+    if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
+    if (event.target.closest("a, input, select, textarea, summary, [contenteditable], button:not(.option)")) return;
     const cur = session.current;
     if (event.key === "Enter") {
-      // Laisse le bouton focalisé gérer Entrée nativement, sauf s'il s'agit d'une option.
-      if (document.activeElement && document.activeElement.matches("button:not(.option)")) return;
       event.preventDefault();
       cur.validated ? next() : validate();
       return;
@@ -653,19 +746,19 @@
   // Thème : auto (système) → clair → sombre
   // ---------------------------------------------------------------------------
   const THEMES = {
-    auto: { next: "light", icon: "◐", label: "Thème : auto (système)" },
-    light: { next: "dark", icon: "☀", label: "Thème : clair" },
-    dark: { next: "auto", icon: "☾", label: "Thème : sombre" },
+    auto: { next: "light", icon: "◐", label: "auto (système)" },
+    light: { next: "dark", icon: "☀", label: "clair" },
+    dark: { next: "auto", icon: "☾", label: "sombre" },
   };
   const themeToggle = document.getElementById("theme-toggle");
 
   function applyTheme() {
-    if (!THEMES[settings.theme]) settings.theme = "auto";
     const theme = THEMES[settings.theme];
     if (settings.theme === "auto") document.documentElement.removeAttribute("data-theme");
     else document.documentElement.setAttribute("data-theme", settings.theme);
-    themeToggle.innerHTML = `<span aria-hidden="true">${theme.icon}</span> ${theme.label.replace("Thème : ", "")}`;
-    themeToggle.title = `${theme.label} — cliquer pour changer`;
+    // Le nom accessible contient le texte visible (WCAG 2.5.3).
+    themeToggle.innerHTML = `<span aria-hidden="true">${theme.icon}</span> <span class="sr-only">Thème :</span> ${theme.label}`;
+    themeToggle.title = `Thème : ${theme.label}. Cliquer pour passer à « ${THEMES[theme.next].label} »`;
   }
 
   themeToggle.addEventListener("click", () => {

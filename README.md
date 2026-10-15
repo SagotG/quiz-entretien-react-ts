@@ -10,9 +10,9 @@ Aucune dépendance ni build. Ouvrir `index.html` dans un navigateur :
 xdg-open index.html
 ```
 
-## Publier sur GitHub Pages
+## Hébergement privé (Cloudflare Pages + Access)
 
-Le site est 100 % statique (chemins relatifs) : il suffit de pousser le dépôt puis, dans **Settings → Pages**, choisir *Deploy from a branch* → `main` / `(root)`. Le fichier `.nojekyll` désactive le traitement Jekyll.
+Le dépôt GitHub est privé. Le site est déployé par **Cloudflare Pages** (connecté au dépôt, redéploiement à chaque push sur `main`, aucune commande de build, dossier de sortie à la racine) et protégé par **Cloudflare Access** : seule l'adresse e-mail autorisée peut l'ouvrir, après un code reçu par e-mail.
 
 La progression (réglages, questions ratées) est stockée dans le `localStorage` du navigateur : elle est propre à chaque appareil.
 

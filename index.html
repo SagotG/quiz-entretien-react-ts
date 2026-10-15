@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#12151b" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Quiz Entretien React TS</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Changer de thème"></button>
+  <main id="app" class="app" aria-live="polite"></main>
+
+  <!-- Banque de questions : un fichier par catégorie (scripts classiques pour fonctionner en file://) -->
+  <script src="questions/typescript.js"></script>
+  <script src="questions/javascript.js"></script>
+  <script src="questions/react.js"></script>
+  <script src="highlight.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

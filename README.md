@@ -1,4 +1,4 @@
-# Quiz entretien : React · TypeScript · JavaScript
+# Quiz entretien : React · TypeScript · JavaScript · ECMAScript
 
 Entraînement aux questions théoriques d'entretien, façon test en ligne (CodinGame) : questions à choix unique ou multiple, chrono par question, classement par catégorie.
 
@@ -18,7 +18,8 @@ La progression (réglages, questions ratées) est stockée dans le `localStorage
 
 ## Fonctionnalités
 
-- **Catégories** TypeScript / JavaScript / React, sélectionnables ; option « Regrouper par catégorie » (TS → JS → React) ou tout mélangé.
+- **Catégories** TypeScript / JavaScript / ECMAScript / React, sélectionnables ; option « Regrouper par catégorie » (TS → JS → ES → React) ou tout mélangé. La catégorie ECMAScript couvre les apports des versions ES2019 à ES2025.
+- **Niveaux** Junior / Confirmé / Senior sur chaque question, avec un filtre sur l'accueil et un badge pendant le quiz. React couvre tous les niveaux, des bases du JSX à React 19.2 (Actions, `use`, Server Components, `<Activity>`, `useEffectEvent`).
 - **Chrono par question** (champ `time`) : mode normal, confortable (×1.5) ou désactivé. À zéro, la réponse est validée automatiquement.
 - **Choix unique ou multiple**, notation tout-ou-rien comme sur les plateformes de test.
 - **Mode strict** : les questions s'affichent toutes avec des cases à cocher, sans dire combien de réponses sont attendues.
@@ -55,7 +56,8 @@ Dans `questions/<catégorie>.js` :
 ```js
 {
   id: "ts-mon-sujet",            // unique
-  category: "ts",                // "ts" | "js" | "react"
+  category: "ts",                // "ts" | "js" | "es" | "react"
+  level: "mid",                  // "junior" | "mid" (confirmé) | "senior"
   type: "single",                // "single" | "multiple"
   time: 45,                      // secondes
   question: "Texte avec `code inline` ?",

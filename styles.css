@@ -53,6 +53,8 @@
   --cat-js-soft: #fff3d6;
   --cat-react: #9059ff;
   --cat-react-soft: #efe8ff;
+  --cat-es: #14bf96;
+  --cat-es-soft: #dff7f0;
 
   --code-bg: #f7f8fa;
   --tk-text: #21242c;
@@ -103,6 +105,8 @@
     --cat-js-soft: #3a2f12;
     --cat-react: #b394ff;
     --cat-react-soft: #2e2350;
+    --cat-es: #5fe0c0;
+    --cat-es-soft: #173a33;
 
     --code-bg: #191b21;
     --tk-text: #e3e6eb;
@@ -149,6 +153,8 @@
   --cat-js-soft: #3a2f12;
   --cat-react: #b394ff;
   --cat-react-soft: #2e2350;
+  --cat-es: #5fe0c0;
+  --cat-es-soft: #173a33;
 
   --code-bg: #191b21;
   --tk-text: #e3e6eb;
@@ -315,6 +321,33 @@ kbd {
 .cat-ts .cat-badge, .cat-badge.cat-ts { background: var(--cat-ts-soft); --dot: var(--cat-ts); }
 .cat-js .cat-badge, .cat-badge.cat-js { background: var(--cat-js-soft); --dot: var(--cat-js); }
 .cat-react .cat-badge, .cat-badge.cat-react { background: var(--cat-react-soft); --dot: var(--cat-react); }
+.cat-es .cat-badge, .cat-badge.cat-es { background: var(--cat-es-soft); --dot: var(--cat-es); }
+
+/* Niveau : badge neutre, crans pleins (1 à 3) pour un repère visuel en plus du texte */
+.meta-badges { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.level-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 1px 10px;
+  border: 1px solid var(--control-border);
+  border-radius: 999px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.level-badge::before {
+  content: "";
+  width: 18px;
+  height: 8px;
+  background:
+    linear-gradient(var(--text), var(--text)) 0 100% / 4px 4px no-repeat,
+    linear-gradient(var(--l2, var(--control-border)), var(--l2, var(--control-border))) 7px 100% / 4px 6px no-repeat,
+    linear-gradient(var(--l3, var(--control-border)), var(--l3, var(--control-border))) 14px 100% / 4px 8px no-repeat;
+}
+.level-mid { --l2: var(--text); }
+.level-senior { --l2: var(--text); --l3: var(--text); }
 .cat-card .cat-badge { margin-bottom: 6px; }
 
 .settings { display: grid; gap: 20px; }
@@ -595,6 +628,7 @@ kbd {
 .meter-fill.cat-ts { background: var(--cat-ts); }
 .meter-fill.cat-js { background: var(--cat-js); }
 .meter-fill.cat-react { background: var(--cat-react); }
+.meter-fill.cat-es { background: var(--cat-es); }
 
 .review { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .review-item details { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; background: var(--surface); }

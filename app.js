@@ -4,9 +4,20 @@
   const CATEGORIES = {
     ts: { label: "TypeScript", short: "TS" },
     js: { label: "JavaScript", short: "JS" },
+    es: { label: "ECMAScript", short: "ES" },
     react: { label: "React", short: "React" },
   };
-  const CATEGORY_ORDER = ["ts", "js", "react"];
+  const CATEGORY_ORDER = ["ts", "js", "es", "react"];
+  // Catégories connues avant l'ajout du champ `knownCategories` dans les réglages.
+  const LEGACY_CATEGORIES = ["ts", "js", "react"];
+
+  const LEVELS = {
+    junior: { label: "Junior" },
+    mid: { label: "Confirmé" },
+    senior: { label: "Senior" },
+  };
+  const LEVEL_ORDER = ["junior", "mid", "senior"];
+  const LEVEL_FILTERS = ["all", ...LEVEL_ORDER];
   const OPTION_LETTERS = "ABCDEFGH";
   const STORAGE_KEY = "quiz-entretien:v1";
   const WARNING_THRESHOLD = 10; // secondes restantes avant passage en rouge
@@ -38,15 +49,24 @@
   const TIME_FACTORS = [1, 1.5, 0];
   const THEME_NAMES = ["auto", "light", "dark"];
 
+  /**
+   * Catégories cochées : celles enregistrées, plus toute catégorie apparue depuis le dernier
+   * enregistrement (sinon une nouvelle catégorie resterait décochée chez les anciens visiteurs).
+   */
+  function sanitizeCategories(s) {
+    if (!Array.isArray(s.categories)) return [...CATEGORY_ORDER];
+    const known = Array.isArray(s.knownCategories) ? s.knownCategories : LEGACY_CATEGORIES;
+    return CATEGORY_ORDER.filter((c) => s.categories.includes(c) || !known.includes(c));
+  }
+
   /** Ne garde du stockage que des valeurs connues : le localStorage n'est pas une source fiable. */
   function sanitizeSettings(raw) {
     const s = raw && typeof raw === "object" ? raw : {};
     const pick = (value, allowed, fallback) => (allowed.includes(value) ? value : fallback);
     const bool = (value, fallback) => (typeof value === "boolean" ? value : fallback);
     return {
-      categories: Array.isArray(s.categories)
-        ? CATEGORY_ORDER.filter((c) => s.categories.includes(c))
-        : [...CATEGORY_ORDER],
+      categories: sanitizeCategories(s),
+      level: pick(s.level, LEVEL_FILTERS, "all"),
       count: pick(s.count, COUNT_OPTIONS, 10),
       grouped: bool(s.grouped, true),
       strict: bool(s.strict, false),
@@ -64,7 +84,7 @@
   );
 
   function persist() {
-    storage.save({ settings, mistakes: [...mistakes] });
+    storage.save({ settings: { ...settings, knownCategories: CATEGORY_ORDER }, mistakes: [...mistakes] });
   }
 
   // ---------------------------------------------------------------------------
@@ -118,6 +138,7 @@
       if (!CATEGORIES[q.category]) issues.push([where, `catégorie inconnue « ${q.category} »`]);
       if (!["single", "multiple"].includes(q.type)) issues.push([where, `type inconnu « ${q.type} »`]);
       if (!(q.time > 0)) issues.push([where, "chrono manquant"]);
+      if (!LEVELS[q.level]) issues.push([where, `niveau inconnu « ${q.level} »`]);
       if (!Array.isArray(q.options) || q.options.length < 2) {
         issues.push([where, "au moins 2 options requises"]);
         continue;
@@ -173,9 +194,15 @@
     }, 50);
   }
 
+  function matchesLevel(q) {
+    return settings.level === "all" || q.level === settings.level;
+  }
+
   function availableQuestions(mode) {
     const cats = new Set(settings.categories);
-    return BANK.filter((q) => cats.has(q.category) && (mode !== "mistakes" || mistakes.has(q.id)));
+    return BANK.filter(
+      (q) => cats.has(q.category) && matchesLevel(q) && (mode !== "mistakes" || mistakes.has(q.id)),
+    );
   }
 
   function startSession(mode) {
@@ -374,7 +401,10 @@
   }
 
   function renderHome() {
-    const counts = Object.fromEntries(CATEGORY_ORDER.map((c) => [c, BANK.filter((q) => q.category === c).length]));
+    const counts = Object.fromEntries(
+      CATEGORY_ORDER.map((c) => [c, BANK.filter((q) => q.category === c && matchesLevel(q)).length]),
+    );
+    const levelLabels = { all: "Tous", ...Object.fromEntries(LEVEL_ORDER.map((l) => [l, LEVELS[l].label])) };
     const selectedCount = availableQuestions("all").length;
     const mistakesCount = availableQuestions("mistakes").length;
     const timeLabels = { 1: "Normal", 1.5: "Confortable ×1.5", 0: "Désactivé" };
@@ -382,7 +412,7 @@
     return `
       <header class="hero">
         <p class="eyebrow">Entraînement entretien technique</p>
-        <h1 tabindex="-1" data-autofocus>React · TypeScript · JavaScript</h1>
+        <h1 tabindex="-1" data-autofocus>React · TypeScript · JavaScript · ECMAScript</h1>
         <p class="lede">Questions théoriques chronométrées, à choix unique ou multiple. Les options sont mélangées à chaque passage.</p>
       </header>
 
@@ -396,7 +426,7 @@
                     data-action="toggle-category" data-value="${c}" aria-pressed="${on}">
               <span class="cat-badge" aria-hidden="true">${CATEGORIES[c].short}</span>
               <span class="cat-name">${CATEGORIES[c].label}</span>
-              <span class="cat-count">${counts[c]} questions</span>
+              <span class="cat-count">${counts[c]} question${counts[c] > 1 ? "s" : ""}</span>
               <span class="cat-check" aria-hidden="true"></span>
             </button>`;
           }).join("")}
@@ -404,6 +434,15 @@
       </section>
 
       <section class="panel settings" aria-label="Réglages">
+        <div class="setting" role="group" aria-labelledby="level-label">
+          <span class="setting-label" id="level-label">Niveau</span>
+          <div class="segmented">
+            ${LEVEL_FILTERS.map(
+              (l) => `<button type="button" data-action="set-level" data-value="${l}"
+                  aria-pressed="${settings.level === l}" class="${settings.level === l ? "is-on" : ""}">${levelLabels[l]}</button>`,
+            ).join("")}
+          </div>
+        </div>
         <div class="setting" role="group" aria-labelledby="count-label">
           <span class="setting-label" id="count-label">Nombre de questions</span>
           <div class="segmented">
@@ -424,7 +463,7 @@
         </div>
         <label class="switch">
           <input type="checkbox" data-action="toggle-grouped" ${settings.grouped ? "checked" : ""}>
-          <span><strong>Regrouper par catégorie</strong> TS, puis JS, puis React (sinon tout est mélangé)</span>
+          <span><strong>Regrouper par catégorie</strong> TS, puis JS, ES et React (sinon tout est mélangé)</span>
         </label>
         <label class="switch">
           <input type="checkbox" data-action="toggle-strict" ${settings.strict ? "checked" : ""}>
@@ -482,7 +521,10 @@
 
       <article class="question-card" aria-labelledby="q-text">
         <div class="question-meta">
-          <span class="cat-badge cat-${q.category}">${CATEGORIES[q.category].label}</span>
+          <span class="meta-badges">
+            <span class="cat-badge cat-${q.category}">${CATEGORIES[q.category].label}</span>
+            <span class="level-badge level-${q.level}"><span class="sr-only">Niveau : </span>${LEVELS[q.level].label}</span>
+          </span>
           ${
             cur.limit
               ? `<div class="timer ${cur.validated ? "is-stopped" : ""}" role="timer" aria-label="Temps restant">
@@ -675,6 +717,11 @@
       }
       case "set-count":
         settings.count = value === "all" ? "all" : Number(value);
+        persist();
+        render();
+        break;
+      case "set-level":
+        settings.level = LEVEL_FILTERS.includes(value) ? value : "all";
         persist();
         render();
         break;

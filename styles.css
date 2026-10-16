@@ -1,7 +1,7 @@
 /*
- * Thème inspiré du design system SG Markets (SG Bootstrap) : noir en couleur principale,
- * gris à niveaux, angles droits, police Inter, accents de la palette étendue
- * (cornflower, buttercup, pacific blue) et rouge de marque en filet.
+ * Thème inspiré de Superdry : noir et blanc à fort contraste, gris neutres, rouge en accent,
+ * titres et boutons en capitales grasses, angles droits. Police Inter (grotesque proche de
+ * la Neue Haas Grotesk utilisée par la marque).
  * Contrastes vérifiés WCAG AA : texte ≥ 4.5:1, contrôles et focus ≥ 3:1.
  */
 @font-face {
@@ -14,44 +14,44 @@
 }
 
 :root {
-  --bg: #f5f6f7;
+  --bg: #f5f5f5;
   --surface: #ffffff;
-  --surface-2: #eceeef;
-  --border: #dfe2e3;
-  --control-border: #6e777a;
-  --text: #231f20;
-  --muted: #5f6668;
-  --ink: #000000;
+  --surface-2: #ededed;
+  --border: #e5e5e5;
+  --control-border: #858585;
+  --text: #1d1d1d;
+  --muted: #5c5c5c;
+  --ink: #1d1d1d;
   --on-ink: #ffffff;
-  --focus: #2469ff;
-  --brand: #e60028; /* rouge de marque : filets décoratifs uniquement */
-  --warn: #a85a00;
+  --focus: #0070d2;
+  --brand: #df2935; /* rouge Superdry : accents et filets */
+  --warn: #9a4d00;
 
-  --good: #007a08;
-  --good-soft: #e6f4e7;
-  --good-fill: #00aa0c;
-  --on-good-fill: #000000;
-  --bad: #c22f1f;
-  --bad-soft: #fbeae8;
-  --bad-fill: #dd3724;
+  --good: #007a23;
+  --good-soft: #e8f5ec;
+  --good-fill: #008827;
+  --on-good-fill: #ffffff;
+  --bad: #c41f2b;
+  --bad-soft: #fdecee;
+  --bad-fill: #df2935;
   --on-bad-fill: #ffffff;
 
-  /* Couleurs de catégories (palette étendue), toujours sous du texte noir */
-  --cat-ts: #6488ff;    /* cornflower blue */
-  --cat-js: #f6a416;    /* buttercup */
-  --cat-react: #00b4bb; /* pacific blue */
-  --on-color: #000000;
-  --timer: #00b4bb;
+  /* Catégories monochromes : étiquettes noires, texte blanc */
+  --cat-ts: var(--ink);
+  --cat-js: var(--ink);
+  --cat-react: var(--ink);
+  --on-color: var(--on-ink);
+  --timer: var(--ink);
 
-  --code-bg: #f5f6f7;
-  --tk-text: #231f20;
-  --tk-comment: #687073;
-  --tk-keyword: #38699f;
-  --tk-string: #275855;
-  --tk-number: #974a5a;
-  --tk-function: #514b90;
-  --tk-type: #4a5885;
-  --tk-punct: #414949;
+  --code-bg: #f5f5f5;
+  --tk-text: #1d1d1d;
+  --tk-comment: #6b6b6b;
+  --tk-keyword: #b01e29;
+  --tk-string: #00702a;
+  --tk-number: #9a4d00;
+  --tk-function: #0060b0;
+  --tk-type: #5b3f99;
+  --tk-punct: #3a3a3a;
 
   --radius: 0;
   --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -61,71 +61,73 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #222424;
-    --surface: #303333;
-    --surface-2: #3b3f3f;
-    --border: #515757;
-    --control-border: #949c9e;
+    --bg: #111111;
+    --surface: #1d1d1d;
+    --surface-2: #2b2b2b;
+    --border: #3a3a3a;
+    --control-border: #8f979d;
     --text: #ffffff;
-    --muted: #a3aaac;
+    --muted: #b7b7b7;
     --ink: #ffffff;
-    --on-ink: #000000;
-    --focus: #529aff;
-    --warn: #f98d00;
+    --on-ink: #111111;
+    --focus: #5cc4f0;
+    --brand: #ff5a63;
+    --warn: #ffb25c;
 
-    --good: #00d750;
-    --good-soft: #1d3a26;
-    --good-fill: #00d750;
+    --good: #3ccf6a;
+    --good-soft: #16301e;
+    --good-fill: #3ccf6a;
     --on-good-fill: #000000;
-    --bad: #ff6b55;
-    --bad-soft: #4a2a25;
-    --bad-fill: #ff563c;
+    --bad: #ff6b72;
+    --bad-soft: #3d1c1f;
+    --bad-fill: #ff5a63;
     --on-bad-fill: #000000;
 
-    --code-bg: #1a1c1c;
-    --tk-text: #d8ddde;
-    --tk-comment: #a3aaac;
-    --tk-keyword: #6488ff;
-    --tk-string: #41c49d;
-    --tk-number: #e88e5e;
-    --tk-function: #f6a416;
-    --tk-type: #b4bbcb;
-    --tk-punct: #d8ddde;
+    --code-bg: #161616;
+    --tk-text: #e5e5e5;
+    --tk-comment: #9a9a9a;
+    --tk-keyword: #ff7a80;
+    --tk-string: #5fd38a;
+    --tk-number: #ffb25c;
+    --tk-function: #5cc4f0;
+    --tk-type: #c3a8ff;
+    --tk-punct: #d0d0d0;
   color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --bg: #222424;
-  --surface: #303333;
-  --surface-2: #3b3f3f;
-  --border: #515757;
-  --control-border: #949c9e;
+  --bg: #111111;
+  --surface: #1d1d1d;
+  --surface-2: #2b2b2b;
+  --border: #3a3a3a;
+  --control-border: #8f979d;
   --text: #ffffff;
-  --muted: #a3aaac;
+  --muted: #b7b7b7;
   --ink: #ffffff;
-  --on-ink: #000000;
-  --focus: #529aff;
-  --warn: #f98d00;
+  --on-ink: #111111;
+  --focus: #5cc4f0;
+  --brand: #ff5a63;
+  --warn: #ffb25c;
 
-  --good: #00d750;
-  --good-soft: #1d3a26;
-  --good-fill: #00d750;
+  --good: #3ccf6a;
+  --good-soft: #16301e;
+  --good-fill: #3ccf6a;
   --on-good-fill: #000000;
-  --bad: #ff6b55;
-  --bad-soft: #4a2a25;
-  --bad-fill: #ff563c;
+  --bad: #ff6b72;
+  --bad-soft: #3d1c1f;
+  --bad-fill: #ff5a63;
   --on-bad-fill: #000000;
 
-  --code-bg: #1a1c1c;
-  --tk-text: #d8ddde;
-  --tk-comment: #a3aaac;
-  --tk-keyword: #6488ff;
-  --tk-string: #41c49d;
-  --tk-number: #e88e5e;
-  --tk-function: #f6a416;
-  --tk-type: #b4bbcb;
-  --tk-punct: #d8ddde;
+  --code-bg: #161616;
+  --tk-text: #e5e5e5;
+  --tk-comment: #9a9a9a;
+  --tk-keyword: #ff7a80;
+  --tk-string: #5fd38a;
+  --tk-number: #ffb25c;
+  --tk-function: #5cc4f0;
+  --tk-type: #c3a8ff;
+  --tk-punct: #d0d0d0;
   color-scheme: dark;
 }
 
@@ -151,8 +153,8 @@ body {
 button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 
 h1, h2, h3 { line-height: 1.3; margin: 0; font-weight: 600; letter-spacing: -0.01em; }
-h1 { font-size: clamp(1.5rem, 3.5vw, 1.85rem); }
-h2 { font-size: 1rem; margin-bottom: 14px; }
+h1 { font-size: clamp(1.5rem, 3.5vw, 1.9rem); font-weight: 700; text-transform: uppercase; letter-spacing: 0.01em; }
+h2 { font-size: 0.85rem; margin-bottom: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
 h3 { font-size: 0.8rem; color: var(--muted); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
 
 code {
@@ -257,13 +259,10 @@ kbd {
   line-height: 1;
 }
 .cat-card.is-on .cat-check { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
-.cat-card.is-on { box-shadow: inset 4px 0 0 var(--cat-color, var(--ink)); }
-.cat-card.cat-ts { --cat-color: var(--cat-ts); }
-.cat-card.cat-js { --cat-color: var(--cat-js); }
-.cat-card.cat-react { --cat-color: var(--cat-react); }
+.cat-card.is-on { box-shadow: inset 4px 0 0 var(--brand); }
 .cat-card.is-on .cat-check::after { content: "✓"; }
 
-/* Étiquette de catégorie : aplat de couleur propre à chaque catégorie, texte noir */
+/* Étiquette de catégorie : aplat noir, texte blanc en capitales */
 .cat-badge {
   display: inline-block;
   font-size: 0.7rem;
@@ -316,9 +315,11 @@ kbd {
 
 .btn {
   font: inherit;
-  font-weight: 600;
-  font-size: 0.95rem;
-  padding: 10px 18px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 12px 20px;
   border-radius: var(--radius);
   border: 1px solid var(--control-border);
   background: var(--surface);
@@ -376,7 +377,7 @@ kbd {
   color: var(--muted);
   margin-bottom: 10px;
 }
-.progress-label { font-size: inherit; font-weight: 600; color: var(--text); letter-spacing: 0; }
+.progress-label { font-size: inherit; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.06em; }
 .progress { height: 4px; background: var(--border); border-radius: 0; overflow: hidden; margin-bottom: 24px; }
 .progress-fill { height: 100%; background: var(--brand); transition: width 0.3s; }
 
@@ -401,7 +402,7 @@ kbd {
 .timer.is-urgent .timer-label { color: var(--bad); font-weight: 600; }
 .timer.is-stopped { opacity: 0.5; }
 
-.question-text { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; overflow-wrap: anywhere; }
+.question-text { font-size: 1.1rem; font-weight: 600; text-transform: none; letter-spacing: 0; margin-bottom: 16px; overflow-wrap: anywhere; }
 
 .code {
   background: var(--code-bg);

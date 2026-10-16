@@ -51,6 +51,7 @@
       grouped: bool(s.grouped, true),
       strict: bool(s.strict, false),
       shortcuts: bool(s.shortcuts, true),
+      sound: bool(s.sound, true),
       timeFactor: pick(s.timeFactor, TIME_FACTORS, 1),
       theme: pick(s.theme, THEME_NAMES, "auto"),
     };
@@ -280,6 +281,7 @@
     else mistakes.add(cur.question.id);
     persist();
     render();
+    sounds.play(correct ? "success" : "failure");
     announce(`${feedbackTitle(session.results[session.results.length - 1])}. ${plainText(cur.question.explanation)}`);
   }
 
@@ -767,6 +769,78 @@
     applyTheme();
   });
 
+  // ---------------------------------------------------------------------------
+  // Sons de validation : synthétisés avec la Web Audio API (aucun fichier à charger)
+  // ---------------------------------------------------------------------------
+  const SOUND_PATTERNS = {
+    // Deux notes montantes et claires (do5 → sol5)
+    success: { wave: "sine", volume: 0.18, notes: [[523.25, 0, 0.12], [783.99, 0.1, 0.22]] },
+    // Deux notes descendantes, plus graves et plus sourdes (mi4 → si♭3)
+    failure: { wave: "triangle", volume: 0.22, notes: [[329.63, 0, 0.16], [233.08, 0.14, 0.3]] },
+  };
+
+  const sounds = (() => {
+    let ctx = null;
+
+    function context() {
+      if (!ctx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return null;
+        ctx = new AudioContextClass();
+      }
+      // Les navigateurs suspendent l'audio tant qu'il n'y a pas eu d'interaction.
+      if (ctx.state === "suspended") ctx.resume().catch(() => {});
+      return ctx;
+    }
+
+    function play(name) {
+      if (!settings.sound) return;
+      const pattern = SOUND_PATTERNS[name];
+      const audio = context();
+      if (!pattern || !audio) return;
+      const start = audio.currentTime + 0.01;
+      for (const [frequency, offset, duration] of pattern.notes) {
+        const osc = audio.createOscillator();
+        const gain = audio.createGain();
+        osc.type = pattern.wave;
+        osc.frequency.value = frequency;
+        // Enveloppe courte (attaque 10 ms, extinction exponentielle) pour éviter les clics.
+        const t = start + offset;
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(pattern.volume, t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+        osc.connect(gain).connect(audio.destination);
+        osc.start(t);
+        osc.stop(t + duration + 0.02);
+      }
+    }
+
+    return { play, unlock: context };
+  })();
+
+  const soundToggle = document.getElementById("sound-toggle");
+
+  function applySound() {
+    // Le libellé visible porte l'état (pas d'aria-pressed en plus, qui ferait doublon).
+    soundToggle.innerHTML = settings.sound
+      ? `<span aria-hidden="true">♪</span> Son activé`
+      : `<span aria-hidden="true" class="is-off">♪</span> Son coupé`;
+    soundToggle.title = settings.sound ? "Cliquer pour couper le son" : "Cliquer pour activer le son";
+  }
+
+  soundToggle.addEventListener("click", () => {
+    settings.sound = !settings.sound;
+    persist();
+    applySound();
+    if (settings.sound) sounds.unlock();
+  });
+
+  // Prépare l'audio dès la première interaction, pour que le son de fin de chrono
+  // (déclenché sans clic) puisse aussi être joué.
+  document.addEventListener("pointerdown", () => settings.sound && sounds.unlock(), { once: true });
+  document.addEventListener("keydown", () => settings.sound && sounds.unlock(), { once: true });
+
+  applySound();
   applyTheme();
   render();
 })();

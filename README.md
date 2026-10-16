@@ -23,7 +23,8 @@ La progression (réglages, questions ratées) est stockée dans le `localStorage
 - **Choix unique ou multiple**, notation tout-ou-rien comme sur les plateformes de test.
 - **Mode strict** : les questions s'affichent toutes avec des cases à cocher, sans dire combien de réponses sont attendues.
 - **Réviser mes erreurs** : les questions ratées sont mémorisées (localStorage) et retirées dès qu'elles sont réussies.
-- **Thème** clair / sombre / auto (bouton en haut à droite, mémorisé), inspiré du style Superdry : noir et blanc à fort contraste, rouge en accent, titres et boutons en capitales grasses, angles droits, police Inter auto-hébergée (`fonts/`, licence SIL OFL dans `fonts/OFL.txt`).
+- **Thème** clair / sombre / auto (bouton en haut à droite, mémorisé), pensé pour la lisibilité et inspiré des plateformes d'apprentissage (palette Khan Academy / Wonder Blocks, cartes de réponse à la Duolingo / Brilliant). Police **Atkinson Hyperlegible** (Braille Institute) auto-hébergée dans `fonts/` (licences SIL OFL : `fonts/OFL.txt`, `fonts/OFL-mono.txt`).
+- **Correction lisible** : après validation, chaque réponse concernée porte une étiquette (« Votre réponse · correcte », « Bonne réponse, non cochée », « Votre réponse · incorrecte ») en plus de la couleur.
 - **Sons** à la validation : deux notes montantes si la réponse est juste, deux notes descendantes plus graves sinon. Synthétisés avec la Web Audio API (aucun fichier), coupables via le bouton « Son » à côté du thème (mémorisé).
 - **Coloration syntaxique** des extraits de code (JS, TS, JSX) avec la palette VS Code Dark+, via un petit tokenizer maison (`highlight.js`, sans dépendance).
 - **Raccourcis** : `A`–`F` ou `1`–`6` pour cocher, `Entrée` pour valider puis passer à la suite. Désactivables dans les réglages.

@@ -505,8 +505,7 @@
                     ${cur.validated ? 'aria-disabled="true"' : ""}>
               <span class="option-key" aria-hidden="true">${OPTION_LETTERS[pos]}</span>
               <span class="option-text">${rich(q.options[orig])}</span>
-              <span class="option-mark" aria-hidden="true"></span>
-              <span class="sr-only option-status"></span>
+              <span class="option-status"></span>
             </button>`,
             )
             .join("")}
@@ -537,8 +536,11 @@
     const result = session.results[session.results.length - 1];
     return `
       <div class="feedback ${result.correct ? "is-correct" : "is-wrong"}">
-        <strong>${feedbackTitle(result)}</strong>
-        <p>${rich(result.question.explanation)}</p>
+        <p class="feedback-title">
+          <span class="feedback-icon" aria-hidden="true">${result.correct ? "✓" : "✗"}</span>
+          <strong>${feedbackTitle(result)}</strong>
+        </p>
+        <p class="feedback-text">${rich(result.question.explanation)}</p>
       </div>`;
   }
 
@@ -567,14 +569,15 @@
       el.classList.toggle("is-missed", good && !picked);
       el.classList.toggle("is-wrong", !good && picked);
       el.classList.toggle("is-dim", !good && !picked);
-      // Équivalent textuel des couleurs et des symboles ✓ / ✗ pour les lecteurs d'écran.
-      el.querySelector(".option-status").textContent = good
+      // Étiquette visible (et lue par les lecteurs d'écran) : la couleur n'est jamais le seul indice.
+      const status = good
         ? picked
-          ? " : bonne réponse, cochée"
-          : " : bonne réponse, non cochée"
+          ? "✓ Votre réponse · correcte"
+          : "✓ Bonne réponse, non cochée"
         : picked
-          ? " : mauvaise réponse, cochée"
+          ? "✗ Votre réponse · incorrecte"
           : "";
+      el.querySelector(".option-status").textContent = status;
     });
   }
 

@@ -632,6 +632,17 @@ kbd {
 .review-expl { color: var(--muted); margin: 14px 0 0; }
 
 /* --- Responsive ---------------------------------------------------------- */
+/* Grands écrans : conteneur plus large. Les paragraphes restent limités à 70 caractères
+   (règle `p { max-width: 70ch }`) pour garder des lignes confortables à lire. */
+@media (min-width: 1200px) {
+  .app { max-width: 960px; }
+  .question-card { padding: 36px 40px; }
+  .question-text { font-size: 1.4rem; }
+}
+@media (min-width: 1600px) {
+  .app { max-width: 1120px; }
+}
+
 /* Écrans tactiles : les raccourcis clavier n'ont pas de sens */
 @media (hover: none) and (pointer: coarse) {
   .kbd-help, .btn kbd { display: none; }

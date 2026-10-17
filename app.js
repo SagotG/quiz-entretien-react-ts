@@ -22,6 +22,17 @@
   const STORAGE_KEY = "quiz-entretien:v1";
   const WARNING_THRESHOLD = 10; // secondes restantes avant passage en rouge
 
+  // Trusted Types : la CSP (`require-trusted-types-for 'script'`) refuse toute insertion HTML qui ne
+  // passe pas par cette politique unique. Les gabarits sont produits par l'application et tout
+  // contenu de question est échappé en amont (escapeHtml / rich / highlightCode).
+  const htmlPolicy = window.trustedTypes
+    ? window.trustedTypes.createPolicy("quiz-html", { createHTML: (html) => html })
+    : null;
+
+  function setHTML(el, html) {
+    el.innerHTML = htmlPolicy ? htmlPolicy.createHTML(html) : html;
+  }
+
   const BANK = window.QUESTION_BANK || [];
   const BY_ID = new Map(BANK.map((q) => [q.id, q]));
 
@@ -367,9 +378,9 @@
         ? { action: active.dataset.action, value: active.dataset.value }
         : null;
 
-    if (screen === "home") app.innerHTML = renderHome();
-    else if (screen === "quiz") app.innerHTML = renderQuiz();
-    else app.innerHTML = renderResults();
+    if (screen === "home") setHTML(app, renderHome());
+    else if (screen === "quiz") setHTML(app, renderQuiz());
+    else setHTML(app, renderResults());
 
     // Largeurs appliquées via le CSSOM : compatible avec une CSP sans 'unsafe-inline'.
     app.querySelectorAll("[data-width]").forEach((el) => {
@@ -809,7 +820,7 @@
     if (settings.theme === "auto") document.documentElement.removeAttribute("data-theme");
     else document.documentElement.setAttribute("data-theme", settings.theme);
     // Le nom accessible contient le texte visible (WCAG 2.5.3).
-    themeToggle.innerHTML = `<span aria-hidden="true">${theme.icon}</span> <span class="sr-only">Thème :</span> ${theme.label}`;
+    setHTML(themeToggle, `<span aria-hidden="true">${theme.icon}</span> <span class="sr-only">Thème :</span> ${theme.label}`);
     themeToggle.title = `Thème : ${theme.label}. Cliquer pour passer à « ${THEMES[theme.next].label} »`;
   }
 
@@ -872,9 +883,12 @@
 
   function applySound() {
     // Le libellé visible porte l'état (pas d'aria-pressed en plus, qui ferait doublon).
-    soundToggle.innerHTML = settings.sound
-      ? `<span aria-hidden="true">♪</span> Son activé`
-      : `<span aria-hidden="true" class="is-off">♪</span> Son coupé`;
+    setHTML(
+      soundToggle,
+      settings.sound
+        ? `<span aria-hidden="true">♪</span> Son activé`
+        : `<span aria-hidden="true" class="is-off">♪</span> Son coupé`,
+    );
     soundToggle.title = settings.sound ? "Cliquer pour couper le son" : "Cliquer pour activer le son";
   }
 

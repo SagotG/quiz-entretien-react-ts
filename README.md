@@ -37,7 +37,17 @@ La progression (réglages, questions ratées) est stockée dans le `localStorage
 - Focus déplacé sur la question à chaque nouvelle question, puis sur « Question suivante » après validation ; résultat et explication annoncés via une région `role="status"`.
 - Bonne / mauvaise réponse indiquées aussi par du texte et des symboles, pas seulement par la couleur.
 - Raccourcis à une touche désactivables (critère 2.1.4) ; chrono réglable ou désactivable avant de commencer (critère 2.2.1).
-- **CSP** stricte (`default-src 'none'`, scripts et styles uniquement depuis le site, pas de style inline), aucune ressource externe (police comprise), contenu échappé avant insertion, réglages relus depuis le `localStorage` validés.
+- **CSP** stricte en balise `<meta>` (GitHub Pages ne permet pas d'en-têtes HTTP) : `default-src 'none'`, scripts, styles et polices uniquement depuis le site, aucun style inline, `object-src`, `base-uri` et `form-action` fermés, `upgrade-insecure-requests`. **Trusted Types** imposé : toute insertion HTML passe par la politique unique `quiz-html` (`setHTML` dans `app.js`), le navigateur bloque les autres. Aucune ressource externe (police comprise), contenu échappé avant insertion, réglages relus depuis le `localStorage` validés.
+- Non référencé : `robots.txt` (`Disallow: /`) et `<meta name="robots" content="noindex, nofollow">`. Sur GitHub Pages le site est servi sous un sous-chemin : seule la balise meta est réellement lue par les moteurs.
+
+## Sécurité automatisée
+
+- **Workflow `Sécurité`** (`.github/workflows/security.yml`), chaque matin à 05:00 UTC, à chaque push sur `main` et sur chaque PR :
+  - **CodeQL** (`security-extended`) sur le JavaScript et sur les workflows GitHub Actions ; résultats dans *Security → Code scanning* ;
+  - **Gitleaks** sur tout l'historique Git, à la recherche de secrets ;
+  - **`scripts/check-site.sh`** : CSP complète et sans `unsafe-*`, aucune ressource externe, aucun `eval` / `document.write`, `innerHTML` uniquement via Trusted Types, robots ; l'exécution planifiée vérifie aussi la version publiée.
+- **Dependabot** (`.github/dependabot.yml`) : le site n'a aucune dépendance npm, il surveille donc les actions GitHub (épinglées par SHA de commit), chaque lundi.
+- Lancer les contrôles locaux : `bash scripts/check-site.sh`.
 
 ## Pas de pattern d'écriture dans les réponses
 

@@ -1,0 +1,105 @@
+# Contrôles de sécurité : chaque matin, à chaque push sur main et sur chaque pull request.
+# Les résultats CodeQL apparaissent dans l'onglet Security > Code scanning du dépôt.
+name: Sécurité
+
+on:
+  schedule:
+    # 05:00 UTC, soit 07:00 à Paris en heure d'été et 06:00 en heure d'hiver.
+    - cron: "0 5 * * *"
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Moindre privilège par défaut ; chaque job élargit seulement ce dont il a besoin.
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codeql:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        # javascript-typescript : code du site ; actions : failles dans les workflows eux-mêmes.
+        language: [javascript-typescript, actions]
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Initialiser CodeQL
+        uses: github/codeql-action/init@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: security-extended
+
+      - name: Analyser
+        uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          category: /language:${{ matrix.language }}
+
+  secrets:
+    name: Secrets dans l'historique (Gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Récupérer tout l'historique
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Rechercher des secrets
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Pas de commentaire sur les PR : le job n'a pas la permission d'écrire.
+          GITLEAKS_ENABLE_COMMENTS: "false"
+
+  site:
+    name: CSP, ressources externes et robots
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Contrôler le code source
+        run: bash scripts/check-site.sh
+
+      - name: Contrôler la version publiée
+        # Vérifie que GitHub Pages sert bien la CSP et les directives robots attendues.
+        # Pas sur push / PR : le déploiement Pages n'est pas encore terminé à ce moment-là.
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          SITE_URL: https://sagotg.github.io/quiz-entretien-react-ts/
+        run: |
+          page=$(curl --fail --silent --show-error --location --max-time 30 "$SITE_URL")
+          tr '\n' ' ' <<<"$page" | grep -q "require-trusted-types-for 'script'" \
+            || { echo "::error::CSP absente ou incomplète sur le site publié"; exit 1; }
+          grep -q 'name="robots" content="noindex' <<<"$page" \
+            || { echo "::error::meta robots noindex absente du site publié"; exit 1; }
+          headers=$(curl --fail --silent --show-error --head --max-time 30 "$SITE_URL")
+          grep -qi '^strict-transport-security:' <<<"$headers" \
+            || echo "::warning::En-tête HSTS absent sur la réponse de GitHub Pages"
+          echo "✓ Site publié : CSP et robots conformes"

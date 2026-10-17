@@ -99,7 +99,6 @@ jobs:
             || { echo "::error::CSP absente ou incomplète sur le site publié"; exit 1; }
           grep -q 'name="robots" content="noindex' <<<"$page" \
             || { echo "::error::meta robots noindex absente du site publié"; exit 1; }
-          headers=$(curl --fail --silent --show-error --head --max-time 30 "$SITE_URL")
-          grep -qi '^strict-transport-security:' <<<"$headers" \
-            || echo "::warning::En-tête HSTS absent sur la réponse de GitHub Pages"
+          # Pas de contrôle HSTS : GitHub Pages n'envoie pas l'en-tête, mais le domaine github.io
+          # figure dans la liste HSTS préchargée des navigateurs, qui imposent donc HTTPS.
           echo "✓ Site publié : CSP et robots conformes"

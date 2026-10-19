@@ -6,8 +6,9 @@
     js: { label: "JavaScript", short: "JS" },
     es: { label: "ECMAScript", short: "ES" },
     react: { label: "React", short: "React" },
+    aws: { label: "AWS", short: "AWS" },
   };
-  const CATEGORY_ORDER = ["ts", "js", "es", "react"];
+  const CATEGORY_ORDER = ["ts", "js", "es", "react", "aws"];
   // Catégories connues avant l'ajout du champ `knownCategories` dans les réglages.
   const LEGACY_CATEGORIES = ["ts", "js", "react"];
 
@@ -423,7 +424,7 @@
     return `
       <header class="hero">
         <p class="eyebrow">Entraînement entretien technique</p>
-        <h1 tabindex="-1" data-autofocus>React · TypeScript · JavaScript · ECMAScript</h1>
+        <h1 tabindex="-1" data-autofocus>React · TypeScript · JavaScript · ECMAScript · AWS</h1>
         <p class="lede">Questions théoriques chronométrées, à choix unique ou multiple. Les options sont mélangées à chaque passage.</p>
       </header>
 

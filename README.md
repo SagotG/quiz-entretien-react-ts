@@ -1,4 +1,4 @@
-# Quiz entretien : React · TypeScript · JavaScript · ECMAScript
+# Quiz entretien : React · TypeScript · JavaScript · ECMAScript · AWS
 
 Entraînement aux questions théoriques d'entretien, façon test en ligne (CodinGame) : questions à choix unique ou multiple, chrono par question, classement par catégorie.
 
@@ -18,7 +18,7 @@ La progression (réglages, questions ratées) est stockée dans le `localStorage
 
 ## Fonctionnalités
 
-- **Catégories** TypeScript / JavaScript / ECMAScript / React, sélectionnables ; option « Regrouper par catégorie » (TS → JS → ES → React) ou tout mélangé. La catégorie ECMAScript couvre les apports des versions ES2019 à ES2025.
+- **Catégories** TypeScript / JavaScript / ECMAScript / React / AWS, sélectionnables ; option « Regrouper par catégorie » (TS → JS → ES → React → AWS) ou tout mélangé. La catégorie ECMAScript couvre les apports des versions ES2019 à ES2025. La catégorie AWS (niveaux junior et confirmé) couvre les services essentiels pour un développeur web : IAM, EC2, VPC, S3, CloudFront, Lambda, DynamoDB, RDS, SQS/SNS, Cognito, CDK…
 - **Niveaux** Junior / Confirmé / Senior sur chaque question, avec un filtre sur l'accueil et un badge pendant le quiz. React couvre tous les niveaux, des bases du JSX à React 19.2 (Actions, `use`, Server Components, `<Activity>`, `useEffectEvent`).
 - **Chrono par question** (champ `time`) : mode normal, confortable (×1.5) ou désactivé. À zéro, la réponse est validée automatiquement.
 - **Choix unique ou multiple**, notation tout-ou-rien comme sur les plateformes de test.
@@ -66,7 +66,7 @@ Dans `questions/<catégorie>.js` :
 ```js
 {
   id: "ts-mon-sujet",            // unique
-  category: "ts",                // "ts" | "js" | "es" | "react"
+  category: "ts",                // "ts" | "js" | "es" | "react" | "aws"
   level: "mid",                  // "junior" | "mid" (confirmé) | "senior"
   type: "single",                // "single" | "multiple"
   time: 45,                      // secondes

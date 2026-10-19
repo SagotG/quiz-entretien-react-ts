@@ -56,7 +56,7 @@ window.QUESTION_BANK.push(
     ],
     answer: [0, 1],
     explanation:
-      "Le root a tous les droits et ne peut pas être restreint par une politique IAM. On le protège par la MFA, on ne lui crée pas de clés d'accès et on le réserve aux rares tâches qui l'exigent. Au quotidien, on passe par IAM Identity Center ou des rôles.",
+      "Le root a tous les droits et aucune politique IAM ne peut le restreindre (seule une SCP d'AWS Organizations le peut, dans un compte membre). On le protège par la MFA, on ne lui crée pas de clés d'accès et on le réserve aux rares tâches qui l'exigent. Au quotidien, on passe par IAM Identity Center ou des rôles.",
   },
   {
     id: "aws-iam-implicit-deny",
@@ -219,11 +219,11 @@ window.QUESTION_BANK.push(
     level: "junior",
     type: "single",
     time: 30,
-    question: "Quelle est la durée maximale d'une invocation de fonction AWS Lambda ?",
+    question: "Quelle est la durée maximale d'une invocation d'une fonction AWS Lambda standard ?",
     options: ["15 minutes", "30 secondes", "5 minutes", "1 heure"],
     answer: [0],
     explanation:
-      "Une invocation Lambda est limitée à 900 secondes (15 minutes). Pour un traitement plus long, on découpe le travail et on l'orchestre (Step Functions, fonctions durables Lambda) ou on passe à un conteneur (ECS / Fargate).",
+      "Une invocation Lambda standard est limitée à 900 secondes (15 minutes) ; seules les fonctions sur Lambda Managed Instances peuvent aller jusqu'à 90 minutes en invocation asynchrone ou via un event source mapping. Pour un traitement plus long, on découpe le travail et on l'orchestre (Step Functions, fonctions durables Lambda) ou on passe à un conteneur (ECS / Fargate).",
   },
   {
     id: "aws-lambda-memory-cpu",
